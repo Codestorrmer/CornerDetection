@@ -5,16 +5,16 @@ from sweeppy import Sweep
 import itertools
 
 #True->use LiDAR, False->use text files
-MODE = False
+MODE = True
 
-XYSMOOTH = 2
-DSMOOTH = 1
+XYSMOOTH = 3
+DSMOOTH = 0
 TRIMCUTOFF = 0.1
-CORNERBUFFER = 5
+CORNERBUFFER = 20
 
 
-GRAPHXY = True
-GRAPHST = False
+GRAPHXY = False
+GRAPHST = True
 GRAPHD = False
 GRAPH2D = False
 CORNERST = True
@@ -29,9 +29,10 @@ distance = []
 adjust = 0
 adjustSet = False
 
-startAngle = 270
-endAngle = 360
-adjust = 270-startAngle
+
+startAngle = 265
+endAngle = 275
+adjust = 5
 
 if(MODE):
         print("Using LiDAR")
@@ -46,6 +47,8 @@ if(MODE):
                                 s = scan[0]
                                 for dataSample in s:
                                         ang = dataSample[0]/1000.0
+                                        print("{} : {}".format(ang,dataSample[1]))
+
                                         if(ang>startAngle and ang<endAngle):
                                                 angle.append(ang+adjust)
                                                 distance.append(dataSample[1])
@@ -53,9 +56,7 @@ if(MODE):
                         first = False
 
                 sweep.stop_scanning()
-                sweep.set_motor_speed(0)
-                        
-        
+
         
 if(not MODE):
         fx = open("angle.txt","r")
@@ -65,6 +66,7 @@ if(not MODE):
                         adjustSet=True
 
                 angle.append(float(line)+adjust)
+
 
 
         fy = open("distance.txt","r")
@@ -83,9 +85,9 @@ smooth = XYSMOOTH
 xdata = []
 ydata = []
 
-for i in range(0,smooth):
-	xdata.append(xd[i])
-	ydata.append(yd[i])
+#for i in range(0,smooth):
+	#xdata.append(xd[i])
+	#ydata.append(yd[i])
 
 
 for i in range(smooth,l-smooth):
@@ -97,9 +99,11 @@ for i in range(smooth,l-smooth):
 	xdata.append(sumX/(2*smooth+1))
 	ydata.append(sumY/(2*smooth+1))
 
-for i in range(l-smooth,l):
-	xdata.append(xd[i])
-	ydata.append(yd[i])
+#for i in range(l-smooth,l):
+	#xdata.append(xd[i])
+	#ydata.append(yd[i])
+
+l = len(xdata)
 
 if GRAPHXY:plt.plot(xdata, ydata, 'r-', label='raw')
 
