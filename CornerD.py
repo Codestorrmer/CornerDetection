@@ -1,7 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy.optimize import curve_fit
 import math
+from sweeppy import Sweep
+import itertools
+
+#True->use LiDAR, False->use text files
+MODE = False
 
 XYSMOOTH = 2
 DSMOOTH = 1
@@ -25,18 +29,47 @@ distance = []
 adjust = 0
 adjustSet = False
 
-fx = open("angle.txt","r")
-for line in fx:
-	if not adjustSet:
-		adjust= 270-float(line)
-		adjustSet=True
+startAngle = 270
+endAngle = 360
+adjust = 270-startAngle
 
-	angle.append(float(line)+adjust)
+if(MODE):
+        print("Using LiDAR")
+        with Sweep('/dev/ttyUSB0') as sweep:
+                sweep.set_motor_speed(2)
+                sweep.set_sample_rate(1000)
+                sweep.start_scanning()
+
+                first = True
+                for scan in itertools.islice(sweep.get_scans(),3):
+                        if(not first):
+                                s = scan[0]
+                                for dataSample in s:
+                                        ang = dataSample[0]/1000.0
+                                        if(ang>startAngle and ang<endAngle):
+                                                angle.append(ang+adjust)
+                                                distance.append(dataSample[1])
+                                break
+                        first = False
+
+                sweep.stop_scanning()
+                sweep.set_motor_speed(0)
+                        
+        
+        
+if(not MODE):
+        fx = open("angle.txt","r")
+        for line in fx:
+                if not adjustSet:
+                        adjust= 270-float(line)
+                        adjustSet=True
+
+                angle.append(float(line)+adjust)
 
 
-fy = open("distance.txt","r")
-for line in fy:
-	distance.append(float(line))
+        fy = open("distance.txt","r")
+        for line in fy:
+                distance.append(float(line))
 
 
 l = len(distance)
