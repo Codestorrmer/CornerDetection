@@ -1,20 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import math
-from sweeppy import Sweep
+#from sweeppy import Sweep
 import itertools
 
 #True->use LiDAR, False->use text files
-MODE = True
+MODE = False
 
 XYSMOOTH = 3
 DSMOOTH = 0
-TRIMCUTOFF = 0.1
+TRIMCUTOFF = 0.2
 CORNERBUFFER = 20
 
 
-GRAPHXY = False
-GRAPHST = True
+GRAPHXY = True
+GRAPHST = False
 GRAPHD = False
 GRAPH2D = False
 CORNERST = True
@@ -32,9 +32,9 @@ adjustSet = False
 
 startAngle = 265
 endAngle = 275
-adjust = 5
+adjust = 0
 
-if(MODE):
+'''if(MODE):
         print("Using LiDAR")
         with Sweep('/dev/ttyUSB0') as sweep:
                 sweep.set_motor_speed(2)
@@ -55,7 +55,7 @@ if(MODE):
                                 break
                         first = False
 
-                sweep.stop_scanning()
+                sweep.stop_scanning()'''
 
         
 if(not MODE):
@@ -98,6 +98,11 @@ for i in range(smooth,l-smooth):
 		sumY+=yd[x]
 	xdata.append(sumX/(2*smooth+1))
 	ydata.append(sumY/(2*smooth+1))
+
+lastX = xdata[len(xdata)-1]
+lastY = ydata[len(ydata)-1]
+xdata.append(lastX+5)
+ydata.append(lastY)
 
 #for i in range(l-smooth,l):
 	#xdata.append(xd[i])
@@ -143,22 +148,26 @@ for i in range(0,smooth-1):
 
 
 
-for i in range(0,length):
-	start = 0;
-	if(i>smooth):
-		sumd-=inVal(i-smooth-1)
-		start = i-smooth
-	end = length-1
-	if(i<(length-smooth)):
-		sumd+=inVal(i+smooth-1)
-		end = i+smooth
-	startX = dist[0]
-	if(start>0):startX=dist[start]
-	endX = dist[length-1]
-	if end<length:
-		endX = dist[end]
-	totD = endX-startX
-	sD.append(sumd/totD)
+if(not DSMOOTH == 0):
+	for i in range(0,length):
+		start = 0;
+		if(i>smooth):
+			sumd-=inVal(i-smooth-1)
+			start = i-smooth
+		end = length-1
+		if(i<(length-smooth)):
+			sumd+=inVal(i+smooth-1)
+			end = i+smooth
+		startX = dist[0]
+		if(start>0):startX=dist[start]
+		endX = dist[length-1]
+		if end<length:
+			endX = dist[end]
+		totD = endX-startX
+		sD.append(sumd/totD)
+
+if(DSMOOTH == 0):
+	sD = cartD
 
 if GRAPHD:
 	plt.plot(dist, cartD, 'r-', label='raw')
@@ -231,6 +240,13 @@ for i in range(1,length-1):
 			mx = aL
 		sign = thisSign
 		xSlope.append(midVal)
+
+midVal = trimA(thisSlopes,thisDists)
+slopeTotals.append(sum(thisSlopes))
+aL = abs(sum(thisSlopes))
+if(aL>mx):
+	mx = aL
+xSlope.append(midVal)
 
 corners = []
 
