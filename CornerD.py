@@ -7,16 +7,30 @@ import itertools
 #True->use LiDAR, False->use text files
 MODE = False
 
-XYSMOOTH = 3
+#Smooth on X Y Graph
+XYSMOOTH = 0
+#Smooth on Derivative
 DSMOOTH = 0
+#Cutoff for trimming to sharp derivative change
+#i.e if =0.1 we trim away derivative changes that are less than 1/10 biggest change from sides
 TRIMCUTOFF = 0.2
+#Angle of corner we want to detect(for boiler corner set to 45)
+CORNERDETECT = 90
+#Buffer we allow for corner so if cornerdetect=45 cornerbuffer=5 we look for 40-50 deg
 CORNERBUFFER = 20
 
+#Target: approx degree of corner
+TARGET = 240
+#angle buffer of search either way
+TARGETBUFFER = 10
 
+#For basic use GRAPHXY,CORNERST=true, rest=false
 GRAPHXY = True
+#Graph Slope Change Totals
 GRAPHST = False
 GRAPHD = False
 GRAPH2D = False
+#CornerST is current method
 CORNERST = True
 CORNER2D = False
 
@@ -29,50 +43,74 @@ distance = []
 adjust = 0
 adjustSet = False
 
+startAngle = TARGET-TARGETBUFFER
+endAngle = TARGET+TARGETBUFFER
+if(startAngle<0):startAngle+=360
+if(endAngle>360):endAngle-=360
+adjust = 315-TARGET
 
-startAngle = 265
-endAngle = 275
-adjust = 0
+
+def within(a):
+	if(startAngle<endAngle):
+		return a>startAngle and a<endAngle
+	if(startAngle>endAngle):
+		return a>startAngle or a<endAngle
 
 '''if(MODE):
-        print("Using LiDAR")
-        with Sweep('/dev/ttyUSB0') as sweep:
-                sweep.set_motor_speed(2)
-                sweep.set_sample_rate(1000)
-                sweep.start_scanning()
+    print("Using LiDAR")
+    with Sweep('/dev/ttyUSB0') as sweep:
+        sweep.set_motor_speed(2)
+        sweep.set_sample_rate(1000)
+        sweep.start_scanning()
 
-                first = True
-                for scan in itertools.islice(sweep.get_scans(),3):
-                        if(not first):
-                                s = scan[0]
-                                for dataSample in s:
-                                        ang = dataSample[0]/1000.0
-                                        print("{} : {}".format(ang,dataSample[1]))
+        first = True
+        for scan in itertools.islice(sweep.get_scans(),3):
+            if(not first):
+                s = scan[0]
+                for dataSample in s:
+                    ang = dataSample[0]/1000.0
 
-                                        if(ang>startAngle and ang<endAngle):
-                                                angle.append(ang+adjust)
-                                                distance.append(dataSample[1])
-                                break
-                        first = False
+                    if(within(angle)):
+                        angle.append(ang)
+                        distance.append(dataSample[1])
+                break
+            first = False
 
-                sweep.stop_scanning()'''
+        sweep.stop_scanning()'''
 
-        
 if(not MODE):
-        fx = open("angle.txt","r")
-        for line in fx:
-                if not adjustSet:
-                        adjust= 270-float(line)
-                        adjustSet=True
+	goodInd = []
+	fx = open("angle.txt","r")
+	counter = 0
+	for line in fx:
+		ang = float(line)
+		if(within(ang)):
+			angle.append(ang)
+			goodInd.append(counter)
+		counter+=1
 
-                angle.append(float(line)+adjust)
+	fy = open("distance.txt","r")
+	counter = 0
+	for line in fy:
+		if(len(goodInd)==0):
+			break
+		if(goodInd[0]==counter):
+			goodInd.pop(0)
+			distance.append(float(line))
+		counter+=1
 
 
+if(endAngle<startAngle):
+	for i in range(0,len(angle)):
+		if(angle[i]>startAngle):
+			angle = angle[i:]+angle[:i]
+			distance = distance[i:]+distance[:i]
+			break
 
-        fy = open("distance.txt","r")
-        for line in fy:
-                distance.append(float(line))
-
+for i in range(0,len(angle)):
+	angle[i] = angle[i]+adjust
+	if(angle[i]>360):angle[i]-=360
+	if(angle[i]<0):angle[i]+=360
 
 l = len(distance)
 
@@ -85,9 +123,9 @@ smooth = XYSMOOTH
 xdata = []
 ydata = []
 
-#for i in range(0,smooth):
+'''for i in range(0,smooth):
 	#xdata.append(xd[i])
-	#ydata.append(yd[i])
+	#ydata.append(yd[i])'''
 
 
 for i in range(smooth,l-smooth):
@@ -100,9 +138,9 @@ for i in range(smooth,l-smooth):
 	ydata.append(sumY/(2*smooth+1))
 
 
-#for i in range(l-smooth,l):
-	#xdata.append(xd[i])
-	#ydata.append(yd[i])
+'''for i in range(l-smooth,l):
+	xdata.append(xd[i])
+	ydata.append(yd[i])'''
 
 l = len(xdata)
 
@@ -247,7 +285,7 @@ xSlope.append(midVal)
 corners = []
 
 for i in range(0,len(slopeTotals)):
-	if(abs(slopeTotals[i]-45)<CORNERBUFFER):
+	if(abs(slopeTotals[i]-CORNERDETECT)<CORNERBUFFER):
 		corners.append(xSlope[i])
 
 cornerOn = 0
