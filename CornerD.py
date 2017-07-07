@@ -120,10 +120,6 @@ smooth = XYSMOOTH
 xdata = []
 ydata = []
 
-'''for i in range(0,smooth):
-	#xdata.append(xd[i])
-	#ydata.append(yd[i])'''
-
 
 for i in range(smooth,l-smooth):
 	sumX = 0
@@ -133,11 +129,6 @@ for i in range(smooth,l-smooth):
 		sumY+=yd[x]
 	xdata.append(sumX/(2*smooth+1))
 	ydata.append(sumY/(2*smooth+1))
-
-
-'''for i in range(l-smooth,l):
-	xdata.append(xd[i])
-	ydata.append(yd[i])'''
 
 l = len(xdata)
 
