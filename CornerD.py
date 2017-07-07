@@ -99,10 +99,6 @@ for i in range(smooth,l-smooth):
 	xdata.append(sumX/(2*smooth+1))
 	ydata.append(sumY/(2*smooth+1))
 
-lastX = xdata[len(xdata)-1]
-lastY = ydata[len(ydata)-1]
-xdata.append(lastX+5)
-ydata.append(lastY)
 
 #for i in range(l-smooth,l):
 	#xdata.append(xd[i])
